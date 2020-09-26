@@ -1,0 +1,44 @@
+version: '3'
+services:
+  php:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    volumes:
+      - ./magento:/app
+      - ./docker/php/custom.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+      - ./docker/php/php-fpm.conf:/usr/local/etc/php-fpm.conf:ro
+      - ./docker/php/www.conf:/usr/local/etc/php-fpm.d/www.conf:ro
+    working_dir: /app
+
+  nginx:
+    image: nginx:1.19-alpine
+    ports:
+      - 80:80
+    volumes:
+      - ./magento:/app
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    environment:
+      NGINX_ENTRYPOINT_QUIET_LOGS: 1
+
+  mysql:
+    image: mysql:5.7
+    ports:
+      - 3306:3306
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      MYSQL_DATABASE: magento
+      MYSQL_ROOT_PASSWORD: hardpass
+
+  es:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.2
+    environment:
+      - discovery.type=single-node
+
+  redis:
+    image: redis
+    volumes:
+      - ./data/redis:/data
+
